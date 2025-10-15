@@ -123,7 +123,7 @@ else
     if [ ! -z "$SKIPPED" ] && [ "$SKIPPED" -gt 0 ]; then
         MESSAGE+="⏭️ Atlanan: ${SKIPPED}%0A"
     fi
-    
+
     if [ ! -z "$FAILED_TESTS" ]; then
         MESSAGE+="%0A🔍 <b>Başarısız Testler:</b>%0A${FAILED_TESTS}"
     fi
