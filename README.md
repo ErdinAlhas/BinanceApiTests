@@ -32,4 +32,4 @@ cd BinanceApiTests
 - BinanceApiTests projesi içerisinde .telegram-config adında bir dosya oluşturun.
 - Dosya içerisine:
   - TELEGRAM_BOT_TOKEN="abc"
-    TELEGRAM_CHAT_ID="-def"    değerlerini ekleyin (abc ve def yerine kendi kullanmak istediğiniz değerleri yazın)
+    TELEGRAM_CHAT_ID="-def"    değerlerini ekleyin (abc ve def yerine kendi kullanacağınız değerleri yazın)
