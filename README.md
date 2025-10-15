@@ -24,4 +24,12 @@ REST Assured ile yazılmış Binance API testleri. Testler otomatik olarak zaman
 ### 1. Projeyi Klonlayın
 ```bash
 git clone https://github.com/your-username/BinanceApiTests.git
-cd BinanceApiTests
+cd BinanceApiTests 
+```
+
+### 2. Test Sonuçlarını Telegram Üzerinden Görmek İçin
+
+- BinanceApiTests projesi içerisinde .telegram-config adında bir dosya oluşturun.
+- Dosya içerisine:
+  - TELEGRAM_BOT_TOKEN="abc"
+    TELEGRAM_CHAT_ID="-def"    değerlerini ekleyin (abc ve def yerine kendi kullanmak istediğiniz değerleri yazın)
