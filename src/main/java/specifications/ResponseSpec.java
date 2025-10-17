@@ -12,4 +12,10 @@ public class ResponseSpec {
                 .build();
     }
 
+    public static ResponseSpecification checkBadRequest(){
+        return new ResponseSpecBuilder()
+                .expectStatusCode(HttpStatus.SC_BAD_REQUEST)
+                .build();
+    }
+
 }

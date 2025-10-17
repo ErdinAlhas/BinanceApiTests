@@ -32,4 +32,18 @@ public class MarketServices extends RequestSpec {
                 .extract()
                 .response();
     }
+
+    public Response getTrades(String symbol, int limit, ResponseSpecification responseSpecification){
+        return RestAssured.given()
+                .spec(super.getRequestSpecification())
+                .queryParams("symbol",symbol)
+                .queryParams("limit",limit)
+                .when()
+                .get("/api/v3/trades")
+                .then()
+                .spec(responseSpecification)
+                .extract()
+                .response();
+    }
+
 }
