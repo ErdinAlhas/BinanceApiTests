@@ -1,11 +1,11 @@
 package services;
 
-import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import io.restassured.specification.ResponseSpecification;
 import specifications.RequestSpec;
-
 import java.util.Map;
+
+import static io.restassured.RestAssured.given;
 
 public class MarketServices extends RequestSpec {
     public MarketServices() {
@@ -13,7 +13,7 @@ public class MarketServices extends RequestSpec {
     }
 
     public Response getAvgPrice(String symbol, ResponseSpecification responseSpecification){
-        return RestAssured.given()
+        return given()
                 .spec(super.getRequestSpecification())
                 .queryParams("symbol",symbol)
                 .get("/api/v3/avgPrice")
@@ -23,7 +23,7 @@ public class MarketServices extends RequestSpec {
                 .response();
     }
     public Response getServerTime(Map<String,Object> params, ResponseSpecification responseSpecification){
-        return RestAssured.given()
+        return given()
                 .spec(super.getRequestSpecification())
                 .queryParams(params)
                 .get("/api/v3/time")
@@ -33,15 +33,14 @@ public class MarketServices extends RequestSpec {
                 .response();
     }
 
-    public Response getTrades(String symbol, int limit, ResponseSpecification responseSpecification){
-        return RestAssured.given()
+    public Response getTrades(String symbol, int limit){
+        return given()
                 .spec(super.getRequestSpecification())
                 .queryParams("symbol",symbol)
                 .queryParams("limit",limit)
                 .when()
                 .get("/api/v3/trades")
                 .then()
-                .spec(responseSpecification)
                 .extract()
                 .response();
     }

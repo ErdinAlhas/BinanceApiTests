@@ -1,16 +1,10 @@
 import Modal.Trades;
-import io.restassured.RestAssured;
-import io.restassured.builder.ResponseSpecBuilder;
+
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.response.Response;
-import io.restassured.specification.ResponseSpecification;
-import org.apache.http.client.HttpResponseException;
-import org.junit.Assert;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
+import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,6 +12,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import services.MainService;
 import services.MarketServices;
 import specifications.ResponseSpec;
+
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -27,22 +27,17 @@ import java.util.Random;
 public class MarketTests extends MainService {
     private MainService mainService;
     private MarketServices marketServices;
-    private ResponseSpecification successResponseSpec;
-    private ResponseSpecification badRequestResponseSpec;
 
     @BeforeEach
     public void setup() {
-        mainService = new MainService();
         marketServices = new MarketServices();
-
-        successResponseSpec = ResponseSpec.checkStatusCodeOk();
-        badRequestResponseSpec = ResponseSpec.checkBadRequest();
+        mainService = new MainService();
     }
 
     @Test
     public void testGetPingResponseValidation() {
         Map<String, Object> params = new HashMap<>();
-        Response response = mainService.getPing(params, successResponseSpec);
+        Response response = mainService.getPing(params, ResponseSpec.checkStatusCodeOk());
         assertNotNull(response);
         assertNotNull(response.getBody().asString());
 
@@ -55,9 +50,9 @@ public class MarketTests extends MainService {
 
     //@RepeatedTest(10)
     @Test
-    public void testGetTestResponseValidation() {
+    public void testGetServerTimeValidation() {
         Map<String, Object> params = new HashMap<>();
-        Response response = marketServices.getServerTime(params, successResponseSpec);
+        Response response = marketServices.getServerTime(params, ResponseSpec.checkStatusCodeOk());
         assertNotNull(response);
         assertNotNull(response.getBody().asString());
         assertThat(response.getStatusCode(), is(200));
@@ -71,8 +66,8 @@ public class MarketTests extends MainService {
     }
 
     @Test
-    public void avgPriceControl(){
-        Response response = marketServices.getAvgPrice("BNBUSDT", successResponseSpec);
+    public void testAvgPriceControl(){
+        Response response = marketServices.getAvgPrice("BNBUSDT", ResponseSpec.checkStatusCodeOk());
 
         String price = response.jsonPath().getString("price");
         int mins = response.jsonPath().getInt("mins");
@@ -93,11 +88,11 @@ public class MarketTests extends MainService {
 
     //@RepeatedTest(10)
     @Test
-    public void TestGetLastTrades(){
+    public void testGetLastTradesSuccessfully(){
         Random random = new Random();
         int limit = random.nextInt(5) + 2;
 
-        Response response = marketServices.getTrades("BNBUSDT", limit, successResponseSpec);
+        Response response = marketServices.getTrades("BNBUSDT", limit);
         List<Trades> trades = response.as(new TypeRef<>() {
         });
         Trades firstTrade = trades.get(0);
@@ -107,6 +102,7 @@ public class MarketTests extends MainService {
         double firstTradeQuoteQty = Double.parseDouble(firstTrade.quoteQty);
         long localTimeStamp = System.currentTimeMillis();
 
+        Assertions.assertEquals(response.getStatusCode(),SC_OK);
         Assertions.assertNotNull(trades);
         Assertions.assertNotNull(firstTrade);
         Assertions.assertNotNull(secondTrade);
@@ -124,24 +120,63 @@ public class MarketTests extends MainService {
     }
 
     @Test
-    public void TestShouldNotLimitValuesIsLessOrEqualThanZero(){
-        int limit = 0;
-        //Bu yapı iyileştirilecek
-        Throwable exception = assertThrows(Throwable.class, () -> {
-            marketServices.getTrades("BNBUSDT", limit, successResponseSpec);
-        });
-        String message = exception.getMessage();
-        assertTrue(message.contains("400") || message.contains("Bad Request"),
-                "Exception 400 hatasını içermeli: " + message);
-        System.out.println("✅ Beklenen exception fırlatıldı: " + message);
-        int limit2 = -1;
-        Throwable exception2 = assertThrows(Throwable.class, () -> {
-            marketServices.getTrades("BNBUSDT", limit2, successResponseSpec);
-        });
-        String message2 = exception2.getMessage();
-        assertTrue(message2.contains("400") || message2.contains("Bad Request"),
-                "Exception 400 hatasını içermeli: " + message);
-        System.out.println("✅ Beklenen exception fırlatıldı: " + message);
-    }
+    public void testGetLastTradesWithInvalidSymbol() throws Exception {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        HttpGet request = marketServices.getTradesForWrongRequest("A",1);
+        CloseableHttpResponse response = httpClient.execute(request);
 
+        int statusCode = response.getStatusLine().getStatusCode();
+        String body = EntityUtils.toString(response.getEntity());
+
+        assertEquals(400, statusCode);
+        assertTrue(body.contains("Invalid symbol"));
+        response.close();
+        httpClient.close();
+    }
+    @Test
+    public void testGetLastTradesWithLimitEqualZero() throws Exception {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        HttpGet request = marketServices.getTradesForWrongRequest("BNBUSDT", 0);
+        CloseableHttpResponse response = httpClient.execute(request);
+
+        int statusCode = response.getStatusLine().getStatusCode();
+        String body = EntityUtils.toString(response.getEntity());
+
+        assertEquals(400, statusCode);
+        assertTrue(body.contains("Mandatory parameter 'limit' was not sent, was empty/null, or malformed."));
+
+        response.close();
+        httpClient.close();
+    }
+    @Test
+    public void testGetLastTradesWithNegativeLimit() throws Exception {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        HttpGet request = marketServices.getTradesForWrongRequest("BNBUSDT", -1);
+        CloseableHttpResponse response = httpClient.execute(request);
+
+        int statusCode = response.getStatusLine().getStatusCode();
+        String body = EntityUtils.toString(response.getEntity());
+
+        assertEquals(400, statusCode);
+        assertTrue(body.contains("Illegal characters found in parameter 'limit'; legal range is '^[0-9]{1,20}$'."));
+
+        response.close();
+        httpClient.close();
+    }
+    @Test
+    public void testGetLastTradesWithLowerSymbolChars() throws Exception {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        HttpGet request = marketServices.getTradesForWrongRequest("abc", 1);
+        CloseableHttpResponse response = httpClient.execute(request);
+
+        int statusCode = response.getStatusLine().getStatusCode();
+        String body = EntityUtils.toString(response.getEntity());
+
+        assertEquals(400, statusCode);
+        System.out.println(body);
+        assertTrue(body.contains("Illegal characters found in parameter 'symbol'; legal range is '^[A-Z0-9-_.]{1,20}$'."));
+
+        response.close();
+        httpClient.close();
+    }
 }
