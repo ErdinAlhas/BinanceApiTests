@@ -63,7 +63,7 @@ public class MarketTests extends MainService {
         long tolerance = 500;
 
         assertTrue(Math.abs(binanceTime-localTimeStamp) <= tolerance ,
-                "Binance server saati local server dan farklı: " + (binanceTime - (localTimeStamp + tolerance)) + "ms");
+                "Binance server time is different than local time : " + (binanceTime - (localTimeStamp + tolerance)) + "ms");
     }
 
     @Test
@@ -74,17 +74,15 @@ public class MarketTests extends MainService {
         int mins = response.jsonPath().getInt("mins");
         long closeTime = response.jsonPath().getLong("closeTime");
 
-        assertNotNull("Price null olmamalı", price);
-        assertTrue(Double.parseDouble(price) > 0, "Price pozitif olmalı");
+        assertTrue(Double.parseDouble(price) > 0, "Price must be positive");
         assertTrue(price.matches("\\d+\\.\\d+"),
-                String.format("Price formatı hatalı! Gelen: '%s'", price));
-        assertEquals(5, mins,"Hatali deger" );
-        assertTrue(closeTime > 0, "CloseTime geçerli olmalı");
+                String.format("Invalid Price Format! Actual: '%s'", price));
+        assertEquals(5, mins,"Invalid mins" );
+        assertTrue(closeTime > 0, "CloseTime is wrong");
 
         long localTimeStamp = System.currentTimeMillis();
-        assertTrue(closeTime <= localTimeStamp, "Hatali, "+"close time: "+closeTime+" local time: "+localTimeStamp);
-
-        response.then().log().body();
+        assertTrue(closeTime <= localTimeStamp, "Different than expected, "+"close time: "+closeTime+" local time: "+localTimeStamp);
+        //response.then().log().body();
     }
 
     //@RepeatedTest(10)
@@ -107,17 +105,17 @@ public class MarketTests extends MainService {
         Assertions.assertNotNull(trades);
         Assertions.assertNotNull(firstTrade);
         Assertions.assertNotNull(secondTrade);
-        assertEquals(limit, trades.size(), "Gelen veri beklenenden farklı. Beklenen: "+limit+" Gelen: "+trades.size());
-        Assertions.assertTrue(firstTrade.time < localTimeStamp, "Hatalı zaman degeri: "+firstTrade.time+" : "+localTimeStamp);
-        Assertions.assertTrue(firstTrade.id > 1000000000, "Hatalı id degeri: "+firstTrade.id);
-        Assertions.assertTrue(firstTradePrice > 0.0, "Fiyat 0 dan büyük olmalı: "+firstTradePrice);
-        Assertions.assertTrue(firstTradeQty > 0.0, "Miktar 0 dan büyük olmalı: "+firstTradePrice);
-        Assertions.assertTrue(firstTradeQuoteQty >= firstTradeQty, "Miktar derinlikten büyük olamaz. Miktar: "+firstTradePrice + "Derinlik: "+firstTradeQuoteQty);
+        assertEquals(limit, trades.size(), "Actual data is different than expected. Expected: "+limit+" Actual: "+trades.size());
+        Assertions.assertTrue(firstTrade.time < localTimeStamp, "Invalid timestamp: "+firstTrade.time+" : "+localTimeStamp);
+        Assertions.assertTrue(firstTrade.id > 1000000000, "Invalid id: "+firstTrade.id);
+        Assertions.assertTrue(firstTradePrice > 0.0, "Price greater than zero : "+firstTradePrice);
+        Assertions.assertTrue(firstTradeQty > 0.0, "Amount greater than zero: "+firstTradePrice);
+        Assertions.assertTrue(firstTradeQuoteQty >= firstTradeQty, "The amount cannot be greater than the depth. Amount: "+firstTradePrice + "Depth: "+firstTradeQuoteQty);
         Assertions.assertNotNull(firstTrade.isBestMatch);
         Assertions.assertNotNull(firstTrade.isBuyerMaker);
-        Assertions.assertTrue(firstTrade.id < secondTrade.id, "Sıralama hatali, first: "+firstTrade.id+" second: "+secondTrade.id);
-        Assertions.assertTrue(firstTrade.time <= secondTrade.time, "Sıralama hatali, first: "+firstTrade.time+" second: "+secondTrade.time);
-        response.then().log().body();
+        Assertions.assertTrue(firstTrade.id < secondTrade.id, "Sorting is wrong, first: "+firstTrade.id+" second: "+secondTrade.id);
+        Assertions.assertTrue(firstTrade.time <= secondTrade.time, "Sorting is wrong, first: "+firstTrade.time+" second: "+secondTrade.time);
+        //response.then().log().body();
     }
 
     @Test
@@ -202,12 +200,12 @@ public class MarketTests extends MainService {
         double secondAskPrice = Double.parseDouble(secondAsk.get(0));
         double secondAskQuantity = Double.parseDouble(secondAsk.get(1));
 
-        assertTrue(orderBook.getLastUpdateId() > 0);
-        assertFalse(orderBook.getBids().isEmpty());
-        assertFalse(orderBook.getAsks().isEmpty());
-        assertTrue(firstAskPrice>firstBidPrice);
-        assertTrue(secondAskPrice>firstAskPrice);
-        assertTrue(firstBidPrice>secondBidPrice);
+        assertTrue(orderBook.getLastUpdateId() > 0, "Invalid Last Update Id");
+        assertEquals(orderBook.getBids().size(), limit, "Bid size should be limit value");
+        assertEquals(orderBook.getAsks().size(), limit, "Ask size should be limit value");
+        assertTrue(firstAskPrice>firstBidPrice, "Depth values is wrong");
+        assertTrue(secondAskPrice>firstAskPrice, "Depth values is wrong");
+        assertTrue(firstBidPrice>secondBidPrice, "Depth values is wrong");
         assertTrue(firstBidQuantity>0.0 && firstAskQuantity>0.0 && secondAskQuantity>0.0 && secondBidQuantity>0.0,"Depth should be great than zero");
     }
 
