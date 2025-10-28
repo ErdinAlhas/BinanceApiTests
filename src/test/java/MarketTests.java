@@ -1,4 +1,5 @@
-import Modal.Trades;
+import Modals.OrderBookModal;
+import Modals.RecentTradesListModal;
 
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.response.Response;
@@ -35,7 +36,7 @@ public class MarketTests extends MainService {
     }
 
     @Test
-    public void testGetPingResponseValidation() {
+    public void testGetConnectivity() {
         Map<String, Object> params = new HashMap<>();
         Response response = mainService.getPing(params, ResponseSpec.checkStatusCodeOk());
         assertNotNull(response);
@@ -88,15 +89,15 @@ public class MarketTests extends MainService {
 
     //@RepeatedTest(10)
     @Test
-    public void testGetLastTradesSuccessfully(){
+    public void testGetRecentTradesSuccessfully(){
         Random random = new Random();
         int limit = random.nextInt(5) + 2;
 
         Response response = marketServices.getTrades("BNBUSDT", limit);
-        List<Trades> trades = response.as(new TypeRef<>() {
+        List<RecentTradesListModal> trades = response.as(new TypeRef<>() {
         });
-        Trades firstTrade = trades.get(0);
-        Trades secondTrade = trades.get(1);
+        RecentTradesListModal firstTrade = trades.get(0);
+        RecentTradesListModal secondTrade = trades.get(1);
         double firstTradePrice = Double.parseDouble(firstTrade.price);
         double firstTradeQty = Double.parseDouble(firstTrade.qty);
         double firstTradeQuoteQty = Double.parseDouble(firstTrade.quoteQty);
@@ -120,7 +121,7 @@ public class MarketTests extends MainService {
     }
 
     @Test
-    public void testGetLastTradesWithInvalidSymbol() throws Exception {
+    public void testGetRecentTradesForInvalidSymbol() throws Exception {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpGet request = marketServices.getTradesForWrongRequest("A",1);
         CloseableHttpResponse response = httpClient.execute(request);
@@ -133,8 +134,9 @@ public class MarketTests extends MainService {
         response.close();
         httpClient.close();
     }
+
     @Test
-    public void testGetLastTradesWithLimitEqualZero() throws Exception {
+    public void testGetRecentTradesWithLimitEqualZero() throws Exception {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpGet request = marketServices.getTradesForWrongRequest("BNBUSDT", 0);
         CloseableHttpResponse response = httpClient.execute(request);
@@ -144,12 +146,12 @@ public class MarketTests extends MainService {
 
         assertEquals(400, statusCode);
         assertTrue(body.contains("Mandatory parameter 'limit' was not sent, was empty/null, or malformed."));
-
         response.close();
         httpClient.close();
     }
+
     @Test
-    public void testGetLastTradesWithNegativeLimit() throws Exception {
+    public void testGetRecentTradesWithNegativeLimit() throws Exception {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpGet request = marketServices.getTradesForWrongRequest("BNBUSDT", -1);
         CloseableHttpResponse response = httpClient.execute(request);
@@ -159,12 +161,12 @@ public class MarketTests extends MainService {
 
         assertEquals(400, statusCode);
         assertTrue(body.contains("Illegal characters found in parameter 'limit'; legal range is '^[0-9]{1,20}$'."));
-
         response.close();
         httpClient.close();
     }
+
     @Test
-    public void testGetLastTradesWithLowerSymbolChars() throws Exception {
+    public void testGetRecentTradesWithLowercaseSymbol() throws Exception {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpGet request = marketServices.getTradesForWrongRequest("abc", 1);
         CloseableHttpResponse response = httpClient.execute(request);
@@ -173,9 +175,98 @@ public class MarketTests extends MainService {
         String body = EntityUtils.toString(response.getEntity());
 
         assertEquals(400, statusCode);
-        System.out.println(body);
         assertTrue(body.contains("Illegal characters found in parameter 'symbol'; legal range is '^[A-Z0-9-_.]{1,20}$'."));
+        response.close();
+        httpClient.close();
+    }
 
+    @Test
+    public void testGetDepthSuccessfully() throws Exception {
+        Random random = new Random();
+        int limit = random.nextInt(5) + 2;
+        Response response = marketServices.getDepth("BNBUSDT", limit);
+
+        OrderBookModal orderBook = response.as(OrderBookModal.class);
+
+        List<String> firstBid = orderBook.getBids().get(0);
+        List<String> secondBid = orderBook.getBids().get(1);
+        double firstBidPrice = Double.parseDouble(firstBid.get(0));
+        double firstBidQuantity = Double.parseDouble(firstBid.get(1));
+        double secondBidPrice = Double.parseDouble(secondBid.get(0));
+        double secondBidQuantity = Double.parseDouble(secondBid.get(1));
+
+        List<String> firstAsk = orderBook.getAsks().get(0);
+        List<String> secondAsk = orderBook.getAsks().get(1);
+        double firstAskPrice = Double.parseDouble(firstAsk.get(0));
+        double firstAskQuantity = Double.parseDouble(firstAsk.get(1));
+        double secondAskPrice = Double.parseDouble(secondAsk.get(0));
+        double secondAskQuantity = Double.parseDouble(secondAsk.get(1));
+
+        assertTrue(orderBook.getLastUpdateId() > 0);
+        assertFalse(orderBook.getBids().isEmpty());
+        assertFalse(orderBook.getAsks().isEmpty());
+        assertTrue(firstAskPrice>firstBidPrice);
+        assertTrue(secondAskPrice>firstAskPrice);
+        assertTrue(firstBidPrice>secondBidPrice);
+        assertTrue(firstBidQuantity>0.0 && firstAskQuantity>0.0 && secondAskQuantity>0.0 && secondBidQuantity>0.0,"Depth should be great than zero");
+    }
+
+    @Test
+    public void testGetDepthForInvalidSymbol() throws Exception {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        HttpGet request = marketServices.getDepthForWrongRequest("A",1);
+        CloseableHttpResponse response = httpClient.execute(request);
+
+        int statusCode = response.getStatusLine().getStatusCode();
+        String body = EntityUtils.toString(response.getEntity());
+
+        assertEquals(400, statusCode);
+        assertTrue(body.contains("Invalid symbol"));
+        response.close();
+        httpClient.close();
+    }
+
+    @Test
+    public void testGetDepthWithLimitEqualZero() throws Exception {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        HttpGet request = marketServices.getDepthForWrongRequest("BNBUSDT", 0);
+        CloseableHttpResponse response = httpClient.execute(request);
+
+        int statusCode = response.getStatusLine().getStatusCode();
+        String body = EntityUtils.toString(response.getEntity());
+
+        assertEquals(400, statusCode);
+        assertTrue(body.contains("Mandatory parameter 'limit' was not sent, was empty/null, or malformed."));
+        response.close();
+        httpClient.close();
+    }
+
+    @Test
+    public void testDepthWithNegativeLimit() throws Exception {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        HttpGet request = marketServices.getDepthForWrongRequest("BNBUSDT", -1);
+        CloseableHttpResponse response = httpClient.execute(request);
+
+        int statusCode = response.getStatusLine().getStatusCode();
+        String body = EntityUtils.toString(response.getEntity());
+
+        assertEquals(400, statusCode);
+        assertTrue(body.contains("Illegal characters found in parameter 'limit'; legal range is '^[0-9]{1,20}$'."));
+        response.close();
+        httpClient.close();
+    }
+
+    @Test
+    public void testGetDepthForLowercaseSymbol() throws Exception {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        HttpGet request = marketServices.getDepthForWrongRequest("abc", 1);
+        CloseableHttpResponse response = httpClient.execute(request);
+
+        int statusCode = response.getStatusLine().getStatusCode();
+        String body = EntityUtils.toString(response.getEntity());
+
+        assertEquals(400, statusCode);
+        assertTrue(body.contains("Illegal characters found in parameter 'symbol'; legal range is '^[A-Z0-9-_.]{1,20}$'."));
         response.close();
         httpClient.close();
     }

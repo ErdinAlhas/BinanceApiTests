@@ -21,4 +21,8 @@ public class RequestSpec {
     public HttpGet getTradesForWrongRequest(String symbol, int limit){
         return new HttpGet("https://api.binance.com/api/v3/trades?symbol="+symbol+"&limit="+limit);
     }
+
+    public HttpGet getDepthForWrongRequest(String symbol, int limit){
+        return new HttpGet("https://api.binance.com/api/v3/trades?symbol="+symbol+"&limit="+limit);
+    }
 }

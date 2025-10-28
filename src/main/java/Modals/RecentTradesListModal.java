@@ -1,7 +1,7 @@
-package Modal;
+package Modals;
 
-public class Trades {
-    public Trades() {
+public class RecentTradesListModal {
+    public RecentTradesListModal() {
     }
 
     public long id;
@@ -12,8 +12,8 @@ public class Trades {
     public Boolean isBuyerMaker;
     public Boolean isBestMatch;
 
-    public Trades(long id, String price, String qty, String quoteQty, long time,
-                 boolean isBuyerMaker, boolean isBestMatch) {
+    public RecentTradesListModal(long id, String price, String qty, String quoteQty, long time,
+                                 boolean isBuyerMaker, boolean isBestMatch) {
         this.id = id;
         this.price = price;
         this.qty = qty;

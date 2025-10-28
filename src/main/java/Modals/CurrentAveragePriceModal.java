@@ -1,7 +1,7 @@
-package Modal;
+package Modals;
 
-public class AvgPriceModal {
-    public AvgPriceModal() {
+public class CurrentAveragePriceModal {
+    public CurrentAveragePriceModal() {
         super();
     }
     public int mins;

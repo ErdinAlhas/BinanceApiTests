@@ -1,7 +1,7 @@
-package Modal;
+package Modals;
 
-public class ServerTimeModal {
-    public ServerTimeModal() {
+public class ConnectivityModal {
+    public ConnectivityModal() {
         super();
     }
     public long serverTime;

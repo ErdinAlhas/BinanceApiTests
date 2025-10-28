@@ -45,4 +45,16 @@ public class MarketServices extends RequestSpec {
                 .response();
     }
 
+    public Response getDepth(String symbol, int limit){
+        return given()
+                .spec(super.getRequestSpecification())
+                .queryParams("symbol",symbol)
+                .queryParams("limit",limit)
+                .when()
+                .get("/api/v3/depth")
+                .then()
+                .extract()
+                .response();
+    }
+
 }
