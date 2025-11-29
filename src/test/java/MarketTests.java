@@ -201,8 +201,8 @@ public class MarketTests extends MainService {
         double secondAskQuantity = Double.parseDouble(secondAsk.get(1));
 
         assertTrue(orderBook.getLastUpdateId() > 0, "Invalid Last Update Id");
-        assertEquals(orderBook.getBids().size(), limit, "Bid size should be limit value");
-        assertEquals(orderBook.getAsks().size(), limit, "Ask size should be limit value");
+        assertEquals(limit, orderBook.getBids().size(), "Bid size should be limit value");
+        assertEquals(limit, orderBook.getAsks().size(), "Ask size should be limit value");
         assertTrue(firstAskPrice>firstBidPrice, "Depth values is wrong");
         assertTrue(secondAskPrice>firstAskPrice, "Depth values is wrong");
         assertTrue(firstBidPrice>secondBidPrice, "Depth values is wrong");
